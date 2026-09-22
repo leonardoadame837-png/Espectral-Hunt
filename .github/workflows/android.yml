@@ -29,17 +29,19 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      - name: Set up Gradle
+      - name: Set up Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.3.1"
 
-      - name: Make Gradle executable
-        run: chmod +x ./gradlew
+      - name: Verify Gradle
+        run: gradle --version
 
       - name: Run unit tests
-        run: ./gradlew test
+        run: gradle test
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug
+        run: gradle assembleDebug
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
