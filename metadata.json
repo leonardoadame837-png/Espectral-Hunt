@@ -1,0 +1,6 @@
+{
+  "name": "SpectraHunter",
+  "description": "Multi-agent parallel cybersecurity bug hunting, tactical RF spectrum analyzer & signal triage workbench.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
