@@ -11,6 +11,9 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
+import android.net.wifi.ScanResult
+import com.example.data.evidence.EvidenceIntegrity
+import com.example.data.evidence.WifiObservation
 import android.os.Build
 import android.os.Bundle
 import android.os.Looper
@@ -48,18 +51,63 @@ class RealDeviceHardwareManager(private val context: Context) {
     }
 
     /**
+     * Returns the most recent Android Wi-Fi scan observations.
+     *
+     * These are observations of Wi-Fi access points reported by Android.
+     * They are not broadband RF measurements and do not establish transmitter
+     * location, direction, identity, or intent.
+     */
+    fun getNearbyWifiObservations(location: DeviceLocationInfo? = null): List<WifiObservation> {
+        if (!hasWifiStatePermission() || wifiManager == null) return emptyList()
+
+        val results: List<ScanResult> = try {
+            wifiManager.scanResults
+        } catch (_: SecurityException) {
+            emptyList()
+        } catch (_: Exception) {
+            emptyList()
+        }
+
+        return results.map { result ->
+            val timestampMs = System.currentTimeMillis()
+            val canonical = listOf(
+                result.SSID,
+                result.BSSID,
+                result.frequency,
+                result.level,
+                result.channelWidth,
+                result.capabilities,
+                timestampMs
+            ).joinToString("|")
+            WifiObservation(
+                evidenceId = "wifi-" + EvidenceIntegrity.sha256(canonical).take(16),
+                ssid = result.SSID.takeIf { it.isNotBlank() },
+                bssid = result.BSSID.takeIf { it.isNotBlank() },
+                frequencyMhz = result.frequency,
+                rssiDbm = result.level,
+                channelWidth = result.channelWidth,
+                capabilities = result.capabilities,
+                timestampMs = timestampMs,
+                latitude = location?.latitude,
+                longitude = location?.longitude,
+                locationAccuracyMeters = location?.accuracyMeters
+            )
+        }
+    }
+
+    /**
      * Attempts to acquire the device's actual real hardware GPS or network location.
      */
     suspend fun getRealDeviceLocation(): DeviceLocationInfo = withContext(Dispatchers.IO) {
         if (!hasLocationPermission() || locationManager == null) {
             return@withContext DeviceLocationInfo(
-                latitude = 37.7749,
-                longitude = -122.4194,
-                altitudeMeters = 38.0,
-                accuracyMeters = 0f,
-                provider = "DEFAULT_UNPERMITTED",
-                locationName = "Location Permission Not Granted",
-                locationAddress = "Grant GPS permission to access real device location",
+                latitude = 0.0,
+                longitude = 0.0,
+                altitudeMeters = 0.0,
+                accuracyMeters = -1f,
+                provider = "UNAVAILABLE",
+                locationName = "Location unavailable",
+                locationAddress = "Grant location permission to collect a real device fix.",
                 isRealHardwareFix = false
             )
         }
@@ -110,10 +158,10 @@ class RealDeviceHardwareManager(private val context: Context) {
             }
 
             return@withContext DeviceLocationInfo(
-                latitude = 37.7749,
-                longitude = -122.4194,
-                altitudeMeters = 30.0,
-                accuracyMeters = 0f,
+                latitude = 0.0,
+                longitude = 0.0,
+                altitudeMeters = 0.0,
+                accuracyMeters = -1f,
                 provider = activeProvider ?: "NO_ACTIVE_PROVIDER",
                 locationName = "Searching for GPS Fix...",
                 locationAddress = "Waiting for satellite/network acquisition",
@@ -298,41 +346,12 @@ class RealDeviceHardwareManager(private val context: Context) {
     /**
      * Converts real Wi-Fi telemetry into an active RF signal that can be monitored on spectrum and tactical map.
      */
-    fun createRealWifiSignal(deviceLocation: DeviceLocationInfo): RfSignalInfo? {
-        val telemetry = getRealWifiTelemetry()
-        if (!telemetry.isConnected || telemetry.frequencyMhz == 0) return null
-
-        return RfSignalInfo(
-            id = "real_wifi_${telemetry.bssid.replace(":", "")}",
-            frequencyMhz = telemetry.frequencyMhz.toDouble(),
-            bandName = telemetry.securityType,
-            modulationType = "OFDM / 802.11 Link",
-            powerDbm = telemetry.rssiDbm.toFloat(),
-            snrDb = (telemetry.rssiDbm + 95).coerceAtLeast(5).toFloat(),
-            bandwidthKhz = 20000f,
-            isRogue = false,
-            azimuthDegrees = 0f,
-            estimatedDistanceM = 3.5f,
-            latitudeOffset = 0f,
-            longitudeOffset = 0f,
-            protocolName = "Real Device Wi-Fi (${telemetry.ssid})",
-            demodulatedText = "[LIVE_RADIO] SSID: ${telemetry.ssid} | IP: ${telemetry.ipAddress} | SPEED: ${telemetry.linkSpeedMbps} Mbps",
-            rawHexPayload = "4C 49 56 45 5F 57 49 46 49 5F 41 50",
-            audioToneFrequencyHz = (telemetry.frequencyMhz / 3).coerceIn(400, 2200),
-            latitude = deviceLocation.latitude,
-            longitude = deviceLocation.longitude,
-            locationName = "Device Real AP: ${telemetry.ssid}",
-            locationAddress = deviceLocation.locationAddress.ifBlank { "Host Device Real Location" },
-            elevationMeters = deviceLocation.altitudeMeters.toInt(),
-            description = "Active physical Wi-Fi access point '${telemetry.ssid}' connected to the host Android radio at ${telemetry.frequencyMhz} MHz with negotiated speed of ${telemetry.linkSpeedMbps} Mbps.",
-            analystAssessment = "ACTIVE HARDWARE RF TELEMETRY: Emitter verified as host device's primary internet gateway (IP: ${telemetry.ipAddress}). Received signal level ${telemetry.rssiDbm} dBm, estimated SNR ${(telemetry.rssiDbm + 95).coerceAtLeast(5)} dB. Security configuration: ${telemetry.securityType}. Carrier waveform exhibits nominal OFDM subcarrier spacing with zero jamming or co-channel interference detected.",
-            threatRating = "AUTHORIZED LOCAL",
-            encryptionState = telemetry.securityType.ifBlank { "WPA2/WPA3 Personal" },
-            transmissionMode = "Active 802.11 Wi-Fi Link",
-            spectralPurityPercent = 99.4f,
-            recommendedAction = "Maintain whitelisted status; channel is clean and operational."
-        )
-    }
+    /**
+     * Wi-Fi connection telemetry is intentionally not converted into an RF signal.
+     * Android exposes Wi-Fi observations, not arbitrary RF/IQ spectrum measurements.
+     * Use getNearbyWifiObservations() for evidence collection.
+     */
+    fun createRealWifiSignal(deviceLocation: DeviceLocationInfo): RfSignalInfo? = null
 
     private fun reverseGeocode(latitude: Double, longitude: Double): Pair<String, String> {
         return try {
