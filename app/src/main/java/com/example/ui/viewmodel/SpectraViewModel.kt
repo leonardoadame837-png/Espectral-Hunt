@@ -354,7 +354,7 @@ class SpectraViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun addManualVoiceNote(text: String) {
-        voiceCapturer.addTranscript(text)
+        voiceCapturer.addTranscript(text, fromMicrophone = false)
     }
 
     fun clearVoiceTranscripts() {
