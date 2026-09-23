@@ -274,11 +274,11 @@ class RealDeviceHardwareManager(private val context: Context) {
                 isConnected = false,
                 ssid = "Permission Required",
                 bssid = "00:00:00:00:00:00",
-                rssiDbm = -100,
+                rssiDbm = 0,
                 frequencyMhz = 0,
                 linkSpeedMbps = 0,
-                securityType = "N/A",
-                ipAddress = "0.0.0.0",
+                securityType = "UNAVAILABLE",
+                ipAddress = "",
                 isRealHardware = false
             )
         }
@@ -334,11 +334,11 @@ class RealDeviceHardwareManager(private val context: Context) {
             isConnected = false,
             ssid = "No Active Wi-Fi Connection",
             bssid = "00:00:00:00:00:00",
-            rssiDbm = -95,
+            rssiDbm = 0,
             frequencyMhz = 0,
             linkSpeedMbps = 0,
-            securityType = "Cellular / Offline",
-            ipAddress = "127.0.0.1",
+            securityType = "NO_ACTIVE_WIFI",
+            ipAddress = "",
             isRealHardware = true
         )
     }
