@@ -21,8 +21,8 @@ enum class AgentRole(
         "Key"
     ),
     SPECTRUM_ANALYST(
-        "Agent Waveform",
-        "RF Protocol & Microwave Frame Demodulator",
+        "Agent Evidence",
+        "Sensor, measurement, and provenance analyst",
         0xFF00FF9D,
         "SettingsInputAntenna"
     ),
@@ -135,19 +135,19 @@ data class RfSignalInfo(
 
 enum class MapDisplayMode(val label: String) {
     REAL_MAP("Real Geographic Map"),
-    TACTICAL_RADAR("3-Node Triangulation Radar")
+    TACTICAL_RADAR("Evidence Analysis Overlay")
 }
 
 enum class TacticalEnvironmentMode(val label: String, val badge: String, val description: String) {
     REAL_DEVICE(
         "Real Device Location & Hardware",
         "LIVE GPS",
-        "Uses the Android device's actual GPS receiver, real Wi-Fi radio connection, and local execution environment."
+        "Uses measurements and observations actually reported by the Android device; unavailable values remain unavailable."
     ),
     SAN_FRANCISCO_RANGE(
         "San Francisco Cyber-Range",
         "TESTBED",
-        "Pre-configured tactical cyber-range scenario set in San Francisco Bay for simulated microwave/mesh threat hunting."
+        "Explicit simulated testbed for development only; results are not field measurements."
     )
 }
 
