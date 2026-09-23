@@ -51,10 +51,10 @@ jobs:
           sdkmanager --list_installed
 
       - name: Run unit tests
-        run: gradle test
+        run: ./gradlew test
 
       - name: Build debug APK
-        run: gradle assembleDebug
+        run: ./gradlew assembleDebug
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v6
