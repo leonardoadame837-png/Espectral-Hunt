@@ -9,6 +9,7 @@ data class WifiObservation(
     val channelWidth: Int,
     val capabilities: String,
     val timestampMs: Long,
+    val scanResultAgeMs: Long,
     val latitude: Double?,
     val longitude: Double?,
     val locationAccuracyMeters: Float?
