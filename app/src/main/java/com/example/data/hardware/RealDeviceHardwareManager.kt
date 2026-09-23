@@ -17,6 +17,7 @@ import com.example.data.evidence.WifiObservation
 import android.os.Build
 import android.os.Bundle
 import android.os.Looper
+import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import com.example.data.model.DeviceLocationInfo
 import com.example.data.model.RealWifiTelemetry
@@ -69,7 +70,11 @@ class RealDeviceHardwareManager(private val context: Context) {
         }
 
         return results.map { result ->
-            val timestampMs = System.currentTimeMillis()
+            val collectedAtMs = System.currentTimeMillis()
+            val resultElapsedMs = result.timestamp / 1_000L
+            val nowElapsedMs = SystemClock.elapsedRealtime()
+            val scanResultAgeMs = (nowElapsedMs - resultElapsedMs).coerceAtLeast(0L)
+            val timestampMs = (collectedAtMs - scanResultAgeMs).coerceAtLeast(0L)
             val canonical = listOf(
                 result.SSID,
                 result.BSSID,
@@ -77,7 +82,8 @@ class RealDeviceHardwareManager(private val context: Context) {
                 result.level,
                 result.channelWidth,
                 result.capabilities,
-                timestampMs
+                timestampMs,
+                scanResultAgeMs
             ).joinToString("|")
             WifiObservation(
                 evidenceId = "wifi-" + EvidenceIntegrity.sha256(canonical).take(16),
@@ -88,6 +94,7 @@ class RealDeviceHardwareManager(private val context: Context) {
                 channelWidth = result.channelWidth,
                 capabilities = result.capabilities,
                 timestampMs = timestampMs,
+                scanResultAgeMs = scanResultAgeMs,
                 latitude = location?.latitude,
                 longitude = location?.longitude,
                 locationAccuracyMeters = location?.accuracyMeters
