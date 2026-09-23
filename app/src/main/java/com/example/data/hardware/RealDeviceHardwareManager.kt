@@ -414,15 +414,15 @@ class RealDeviceHardwareManager(private val context: Context) {
         } catch (_: Exception) {}
 
         return@withContext DeviceLocationInfo(
-            latitude = 37.7833,
-            longitude = -122.4167,
-            altitudeMeters = 20.0,
-            accuracyMeters = 5.0f,
-            provider = "SEARCH_PIN",
-            locationName = addressQuery.take(24),
-            locationAddress = "Target Address: $addressQuery",
+            latitude = 0.0,
+            longitude = 0.0,
+            altitudeMeters = 0.0,
+            accuracyMeters = -1.0f,
+            provider = "GEOCODER_UNAVAILABLE",
+            locationName = "Location not resolved",
+            locationAddress = "The requested address could not be resolved to coordinates.",
             timestampMs = System.currentTimeMillis(),
-            isRealHardwareFix = true
+            isRealHardwareFix = false
         )
     }
 }
