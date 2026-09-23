@@ -214,15 +214,15 @@ class VoiceAudioCapturer(private val context: Context) {
         } catch (_: Exception) {}
     }
 
-    fun addTranscript(text: String) {
+    fun addTranscript(text: String, fromMicrophone: Boolean = true) {
         val sdf = SimpleDateFormat("HH:mm:ss.SSS", Locale.US)
         val entry = VoiceCaptureEntry(
             id = "voice_${System.currentTimeMillis()}",
             timestampFormatted = sdf.format(Date()),
             textContent = text,
-            peakFrequencyHz = if (_peakFreqHz.value > 0) _peakFreqHz.value else 440,
+            peakFrequencyHz = _peakFreqHz.value,
             dbVolume = _rmsDb.value,
-            isRealMicCapture = true
+            isRealMicCapture = fromMicrophone
         )
         _capturedTranscripts.value = (listOf(entry) + _capturedTranscripts.value).take(50)
     }
