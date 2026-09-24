@@ -8,7 +8,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -186,7 +185,6 @@ fun SpectraApp(viewModel: SpectraViewModel = viewModel()) {
                 tonalElevation = 8.dp,
                 modifier = Modifier
                     .border(1.dp, CyberBorder)
-                    .navigationBarsPadding()
                     .testTag("bottom_navigation_bar")
             ) {
                 val navItems = listOf(
@@ -239,7 +237,7 @@ fun SpectraApp(viewModel: SpectraViewModel = viewModel()) {
                                 text = label,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontFamily = FontFamily.Monospace,
-                                    fontSize = 10.sp,
+                                    fontSize = 9.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                 )
                             )
