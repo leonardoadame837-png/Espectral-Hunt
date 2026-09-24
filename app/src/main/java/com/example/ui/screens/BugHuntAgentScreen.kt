@@ -99,7 +99,8 @@ fun BugHuntAgentScreen(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 14.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(bottom = 28.dp)
     ) {
         // Hero Header & Description
         item {
