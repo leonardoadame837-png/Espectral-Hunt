@@ -18,10 +18,12 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Radar
 import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Sensors
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -57,6 +59,7 @@ import com.example.ui.screens.AuditHistoryScreen
 import com.example.ui.screens.BugHuntAgentScreen
 import com.example.ui.screens.SpectrumAnalyzerScreen
 import com.example.ui.screens.TacticalMapScreen
+import com.example.ui.screens.PhoneEvidenceScreen
 import com.example.ui.theme.CyberBg
 import com.example.ui.theme.CyberBorder
 import com.example.ui.theme.CyberSurface
@@ -193,7 +196,8 @@ fun SpectraApp(viewModel: SpectraViewModel = viewModel()) {
                     Triple("Bug Hunt", Icons.Filled.Security, Icons.Outlined.Security),
                     Triple("Spectrum", Icons.Filled.GraphicEq, Icons.Outlined.GraphicEq),
                     Triple("Tactical Map", Icons.Filled.Radar, Icons.Outlined.Radar),
-                    Triple("Archive", Icons.Filled.Bookmark, Icons.Outlined.BookmarkBorder)
+                    Triple("Archive", Icons.Filled.Bookmark, Icons.Outlined.BookmarkBorder),
+                    Triple("Evidence", Icons.Filled.Sensors, Icons.Outlined.Sensors)
                 )
 
                 navItems.forEachIndexed { index, (label, selectedIcon, unselectedIcon) ->
@@ -363,6 +367,9 @@ fun SpectraApp(viewModel: SpectraViewModel = viewModel()) {
                     onClearAllReports = { viewModel.clearAllReports() },
                     onDeleteSignal = { viewModel.deleteSignal(it) },
                     onClearAllSignals = { viewModel.clearAllSignals() }
+                )
+                4 -> PhoneEvidenceScreen(
+                    deviceLocation = deviceLocation
                 )
             }
         }
