@@ -347,7 +347,7 @@ fun LocationConfigDialog(
                     .verticalScroll(rememberScrollState())
             ) {
                 Text(
-                    text = "Tu ubicación actual es utilizada para centrar el mapa táctico y localizar las señales de radiofrecuencia y vulnerabilidades.",
+                    text = "Tu ubicación actual SOLO sirve como referencia del dispositivo y para centrar el mapa. No se usa como la ubicación de un hallazgo, señal o evidencia a menos que esa observación haya sido capturada allí.",
                     style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
                 )
 
