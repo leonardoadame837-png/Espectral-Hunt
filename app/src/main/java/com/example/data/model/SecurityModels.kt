@@ -60,6 +60,13 @@ enum class VulnerabilitySeverity(val label: String, val colorHex: Long, val base
     INFORMATIONAL("INFO", 0xFF00B0FF, 1.0f)
 }
 
+enum class FindingLocationSource {
+    VERIFIED_OBSERVATION,
+    DEVICE_LOCATION_ONLY,
+    SIMULATED,
+    NONE
+}
+
 data class VulnerabilityFinding(
     val id: String,
     val title: String,
@@ -77,7 +84,8 @@ data class VulnerabilityFinding(
     val longitude: Double = -122.4194,
     val locationName: String = "Tactical Cyber Range Alpha",
     val locationAddress: String = "San Francisco, CA",
-    val elevationMeters: Int = 38
+    val elevationMeters: Int = 38,
+    val locationSource: FindingLocationSource = FindingLocationSource.NONE
 )
 
 data class ConsensusReport(
