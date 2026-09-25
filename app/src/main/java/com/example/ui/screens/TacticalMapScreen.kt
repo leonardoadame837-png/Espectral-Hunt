@@ -68,6 +68,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.DeviceLocationInfo
+import com.example.data.model.FindingLocationSource
 import com.example.data.model.MapTargetItem
 import com.example.data.model.RfSignalInfo
 import com.example.data.model.TacticalEnvironmentMode
@@ -125,7 +126,8 @@ fun TacticalMapScreen(
     // Build unified target items
     val allTargets = remember(findings, signals) {
         val list = mutableListOf<MapTargetItem>()
-        findings.forEach { list.add(MapTargetItem.FindingTarget(it)) }
+        findings.filter { it.locationSource == FindingLocationSource.VERIFIED_OBSERVATION }
+            .forEach { list.add(MapTargetItem.FindingTarget(it)) }
         signals.forEach { list.add(MapTargetItem.SignalTarget(it)) }
         list
     }
@@ -196,9 +198,9 @@ fun TacticalMapScreen(
 
                 Text(
                     text = if (isRealMode) {
-                        "Target nodes & findings are mapped around your physical device location (${deviceLocation?.locationName ?: "Host Device"})."
+                        "MI UBICACIÓN es solo el origen del dispositivo. Los hallazgos solo aparecen en el mapa cuando tienen una ubicación de observación verificada."
                     } else {
-                        "Target nodes & findings are currently loaded from the San Francisco cyber-range scenario (Financial District / Bay Area)."
+                        "Los datos del testbed son simulados y no representan hallazgos físicos ni tu dirección."
                     },
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontFamily = FontFamily.Monospace,
@@ -609,7 +611,7 @@ fun TacticalMapScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "REAL GEOLOCATION (UBICACIÓN EN MAPA)",
+                                text = "UBICACIÓN DEL HALLAZGO (OBSERVACIÓN VERIFICADA)",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontFamily = FontFamily.Monospace,
                                     fontWeight = FontWeight.Black,
