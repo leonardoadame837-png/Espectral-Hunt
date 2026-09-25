@@ -79,7 +79,7 @@ fun TacticalTopAppBar(
         Column(
             modifier = Modifier
                 .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -90,7 +90,7 @@ fun TacticalTopAppBar(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(32.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color(0xFF002B36))
                             .border(1.dp, NeonCyan, RoundedCornerShape(8.dp)),
@@ -104,7 +104,7 @@ fun TacticalTopAppBar(
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
