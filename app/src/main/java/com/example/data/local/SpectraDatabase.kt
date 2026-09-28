@@ -10,9 +10,10 @@ import androidx.room.RoomDatabase
         AuditReportEntity::class,
         InterceptedSignalEntity::class,
         ThreatSignatureEntity::class,
-        ThreatAlertEntity::class
+        ThreatAlertEntity::class,
+        EvidenceRecordEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class SpectraDatabase : RoomDatabase() {

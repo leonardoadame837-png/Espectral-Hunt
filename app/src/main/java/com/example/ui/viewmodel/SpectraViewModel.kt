@@ -7,7 +7,11 @@ import com.example.data.audio.SignalAudioSynthesizer
 import com.example.data.engine.MultiAgentSecurityEngine
 import com.example.data.hardware.RealDeviceHardwareManager
 import com.example.data.hardware.VoiceAudioCapturer
+import com.example.data.evidence.EvidenceClassification
+import com.example.data.evidence.EvidenceDraft
+import com.example.data.evidence.EvidenceRepository
 import com.example.data.local.AuditReportEntity
+import com.example.data.local.EvidenceRecordEntity
 import com.example.data.local.InterceptedSignalEntity
 import com.example.data.local.SpectraDatabase
 import com.example.data.local.ThreatAlertEntity
@@ -39,6 +43,7 @@ class SpectraViewModel(application: Application) : AndroidViewModel(application)
     private val audioSynthesizer = SignalAudioSynthesizer(viewModelScope)
     private val voiceCapturer = VoiceAudioCapturer(application)
     private val threatEngine = ThreatDetectionEngine()
+    private val evidenceRepository = EvidenceRepository(dao)
 
     // Voice Capture State
     val isVoiceRecording: StateFlow<Boolean> = voiceCapturer.isRecording
@@ -142,6 +147,32 @@ class SpectraViewModel(application: Application) : AndroidViewModel(application)
 
     private val _selectedThreatAlert = MutableStateFlow<ThreatAlertEntity?>(null)
     val selectedThreatAlert: StateFlow<ThreatAlertEntity?> = _selectedThreatAlert.asStateFlow()
+
+    val evidence: StateFlow<List<EvidenceRecordEntity>> = dao.getAllEvidence()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _showEvidenceReplay = MutableStateFlow(false)
+    val showEvidenceReplay: StateFlow<Boolean> = _showEvidenceReplay.asStateFlow()
+
+    fun captureVerifiedLocationEvidence() {
+        val loc = _deviceLocation.value
+        if (!loc.isRealHardwareFix) return
+        viewModelScope.launch {
+            evidenceRepository.append(
+                EvidenceDraft(
+                    sourceType = "ANDROID_LOCATION",
+                    classification = EvidenceClassification.MEASURED,
+                    title = "Verified device location fix",
+                    payload = "Latitude=" + loc.latitude + ", longitude=" + loc.longitude +
+                        ", accuracyMeters=" + loc.accuracyMeters + ", provider=" + loc.provider,
+                    locationLabel = "Phone position at collection time"
+                )
+            )
+        }
+    }
+
+    fun openEvidenceReplay() { _showEvidenceReplay.value = true }
+    fun closeEvidenceReplay() { _showEvidenceReplay.value = false }
 
     // Active bottom navigation tab index (0 = Bug Hunt, 1 = Spectrum, 2 = Tactical Map, 3 = History)
     private val _selectedNavTab = MutableStateFlow(0)

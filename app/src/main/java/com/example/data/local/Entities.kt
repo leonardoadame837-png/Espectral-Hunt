@@ -83,3 +83,18 @@ data class ThreatAlertEntity(
     val timestamp: Long = System.currentTimeMillis()
 )
 
+
+@Entity(tableName = "evidence_records")
+data class EvidenceRecordEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val evidenceId: String,
+    val sourceType: String,
+    val classification: String,
+    val title: String,
+    val payload: String,
+    val locationLabel: String?,
+    val createdAt: Long,
+    val previousHash: String?,
+    val sha256: String,
+    val supportingEvidenceIds: String
+)
