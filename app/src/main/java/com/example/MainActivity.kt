@@ -59,6 +59,8 @@ import com.example.ui.screens.BugHuntAgentScreen
 import com.example.ui.screens.SpectrumAnalyzerScreen
 import com.example.ui.screens.TacticalMapScreen
 import com.example.ui.screens.PhoneEvidenceScreen
+import com.example.ui.screens.EvidenceChainScreen
+import com.example.ui.screens.InvestigationReplayScreen
 import com.example.ui.theme.CyberBg
 import com.example.ui.theme.CyberBorder
 import com.example.ui.theme.CyberSurface
@@ -109,6 +111,8 @@ fun SpectraApp(viewModel: SpectraViewModel = viewModel()) {
     val audioVolume by viewModel.audioVolume.collectAsState()
     val currentModulationType by viewModel.currentModulationType.collectAsState()
     val audioWaveform by viewModel.audioWaveform.collectAsState()
+    val evidence by viewModel.evidence.collectAsState()
+    val showEvidenceReplay by viewModel.showEvidenceReplay.collectAsState()
 
     val isVoiceRecording by viewModel.isVoiceRecording.collectAsState()
     val voiceRmsDb by viewModel.voiceRmsDb.collectAsState()
@@ -265,6 +269,13 @@ fun SpectraApp(viewModel: SpectraViewModel = viewModel()) {
                 .background(CyberBg)
                 .padding(innerPadding)
         ) {
+            if (showEvidenceReplay) {
+                InvestigationReplayScreen(
+                    evidence = evidence,
+                    onBack = { viewModel.closeEvidenceReplay() }
+                )
+                return@Scaffold
+            }
             when (selectedTab) {
                 0 -> BugHuntAgentScreen(
                     presets = presets,
@@ -366,8 +377,10 @@ fun SpectraApp(viewModel: SpectraViewModel = viewModel()) {
                     onDeleteSignal = { viewModel.deleteSignal(it) },
                     onClearAllSignals = { viewModel.clearAllSignals() }
                 )
-                4 -> PhoneEvidenceScreen(
-                    deviceLocation = deviceLocation
+                4 -> EvidenceChainScreen(
+                    evidence = evidence,
+                    onCaptureLocationEvidence = { viewModel.captureVerifiedLocationEvidence() },
+                    onReplay = { viewModel.openEvidenceReplay() }
                 )
             }
         }
