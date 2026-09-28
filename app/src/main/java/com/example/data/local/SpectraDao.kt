@@ -72,4 +72,18 @@ interface SpectraDao {
 
     @Query("DELETE FROM threat_alerts")
     suspend fun clearAllThreatAlerts()
+
+    // Append-only forensic evidence ledger
+    @Query("SELECT * FROM evidence_records ORDER BY createdAt ASC")
+    fun getAllEvidence(): Flow<List<EvidenceRecordEntity>>
+
+    @Query("SELECT * FROM evidence_records ORDER BY createdAt DESC LIMIT 1")
+    suspend fun getLatestEvidence(): EvidenceRecordEntity?
+
+    @Query("SELECT * FROM evidence_records WHERE evidenceId IN (:ids)")
+    suspend fun getEvidenceByIds(ids: List<String>): List<EvidenceRecordEntity>
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertEvidence(record: EvidenceRecordEntity): Long
 }
+
