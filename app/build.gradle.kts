@@ -17,13 +17,20 @@ android {
     applicationId = "com.aistudio.spectrahunter.kxpztr"
     minSdk = 24
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0"
+    versionCode = providers.gradleProperty("devVersionCode").orNull?.toIntOrNull() ?: 1
+    versionName = providers.gradleProperty("devVersionName").orNull ?: "1.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
   signingConfigs {
+    create("developer") {
+      val keystorePath = System.getenv("ESPECTRAL_DEV_KEYSTORE_PATH") ?: "${rootDir}/.ci/espectral-dev.jks"
+      storeFile = file(keystorePath)
+      storePassword = System.getenv("ESPECTRAL_DEV_STORE_PASSWORD")
+      keyAlias = System.getenv("ESPECTRAL_DEV_KEY_ALIAS") ?: "espectral-dev"
+      keyPassword = System.getenv("ESPECTRAL_DEV_KEY_PASSWORD")
+    }
     create("release") {
       val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
       storeFile = file(keystorePath)
@@ -34,6 +41,9 @@ android {
   }
 
   buildTypes {
+    debug {
+      signingConfig = signingConfigs.getByName("developer")
+    }
     release {
       isCrunchPngs = false
       isMinifyEnabled = false
