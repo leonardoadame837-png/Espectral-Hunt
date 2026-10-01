@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build and test Android app
+    name: Build, test, sign, and publish developer APK
     runs-on: ubuntu-latest
 
     steps:
@@ -45,22 +45,51 @@ jobs:
         with:
           gradle-version: "9.3.1"
 
-      - name: Verify toolchain
+      - name: Verify persistent signing configuration
+        env:
+          ESPECTRAL_DEV_KEYSTORE_B64: ${{ secrets.ESPECTRAL_DEV_KEYSTORE_B64 }}
+          ESPECTRAL_DEV_STORE_PASSWORD: ${{ secrets.ESPECTRAL_DEV_STORE_PASSWORD }}
+          ESPECTRAL_DEV_KEY_PASSWORD: ${{ secrets.ESPECTRAL_DEV_KEY_PASSWORD }}
         run: |
-          java -version
-          gradle --version
-          sdkmanager --list_installed
+          set -euo pipefail
+          test -n "$ESPECTRAL_DEV_KEYSTORE_B64" || { echo "::error::ESPECTRAL_DEV_KEYSTORE_B64 is not configured."; exit 1; }
+          test -n "$ESPECTRAL_DEV_STORE_PASSWORD" || { echo "::error::ESPECTRAL_DEV_STORE_PASSWORD is not configured."; exit 1; }
+          test -n "$ESPECTRAL_DEV_KEY_PASSWORD" || { echo "::error::ESPECTRAL_DEV_KEY_PASSWORD is not configured."; exit 1; }
+          mkdir -p .ci
+          printf '%s' "$ESPECTRAL_DEV_KEYSTORE_B64" | base64 --decode > .ci/espectral-dev.jks
+          test -s .ci/espectral-dev.jks
 
       - name: Run unit tests
         run: ./gradlew test
 
-      - name: Build debug APK
-        run: ./gradlew assembleDebug
+      - name: Build signed developer APK
+        env:
+          ESPECTRAL_DEV_STORE_PASSWORD: ${{ secrets.ESPECTRAL_DEV_STORE_PASSWORD }}
+          ESPECTRAL_DEV_KEY_PASSWORD: ${{ secrets.ESPECTRAL_DEV_KEY_PASSWORD }}
+          ESPECTRAL_DEV_KEY_ALIAS: ${{ secrets.ESPECTRAL_DEV_KEY_ALIAS || 'espectral-dev' }}
+        run: |
+          ./gradlew assembleDebug \
+            -PdevVersionCode=${{ github.run_number }} \
+            -PdevVersionName="1.0.${{ github.run_number }}"
 
-      - name: Upload debug APK for phone testing
+      - name: Verify APK identity and version
+        run: |
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          apksigner verify --verbose "$APK"
+
+      - name: Upload signed developer APK
         uses: actions/upload-artifact@v4
         with:
-          name: espectral-hunt-debug-apk
+          name: espectral-hunt-developer-apk-${{ github.run_number }}
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
+
+      - name: Upload rolling developer APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: espectral-hunt-developer-latest
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
