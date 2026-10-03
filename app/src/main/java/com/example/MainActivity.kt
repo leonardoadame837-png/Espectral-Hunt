@@ -161,29 +161,12 @@ fun SpectraApp(viewModel: SpectraViewModel = viewModel()) {
             .fillMaxSize()
             .background(CyberBg),
         topBar = {
-            androidx.compose.foundation.layout.Column {
-                TacticalTopAppBar(
-                    isScanningOrHunting = isHunting,
-                    isAudioPlaying = isAudioPlaying,
-                    onToggleAudio = { viewModel.toggleAudioDemod() },
-                    activeThreatCount = activeAlertsCount
-                )
-                PersistentLocationBar(
-                    deviceLocation = deviceLocation,
-                    onRefreshLocation = {
-                        locationPermissionLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                            )
-                        )
-                        viewModel.refreshRealTelemetry()
-                    },
-                    onSetCustomLocation = { lat, lon, name ->
-                        viewModel.setCustomLocation(lat, lon, name)
-                    }
-                )
-            }
+            TacticalTopAppBar(
+                isScanningOrHunting = isHunting,
+                isAudioPlaying = isAudioPlaying,
+                onToggleAudio = { viewModel.toggleAudioDemod() },
+                activeThreatCount = activeAlertsCount
+            )
         },
         bottomBar = {
             NavigationBar(
@@ -263,13 +246,34 @@ fun SpectraApp(viewModel: SpectraViewModel = viewModel()) {
             }
         }
     ) { innerPadding ->
-        Box(
+        androidx.compose.foundation.layout.Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(CyberBg)
                 .padding(innerPadding)
         ) {
-            if (showEvidenceReplay) {
+            PersistentLocationBar(
+                deviceLocation = deviceLocation,
+                onRefreshLocation = {
+                    locationPermissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        )
+                    )
+                    viewModel.refreshRealTelemetry()
+                },
+                onSetCustomLocation = { lat, lon, name ->
+                    viewModel.setCustomLocation(lat, lon, name)
+                }
+            )
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                if (showEvidenceReplay) {
                 InvestigationReplayScreen(
                     evidence = evidence,
                     onBack = { viewModel.closeEvidenceReplay() }
@@ -383,6 +387,7 @@ fun SpectraApp(viewModel: SpectraViewModel = viewModel()) {
                     onReplay = { viewModel.openEvidenceReplay() }
                 )
             }
+        }
         }
     }
 }
