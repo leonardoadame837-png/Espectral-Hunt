@@ -29,31 +29,44 @@ android {
       !System.getenv("ESPECTRAL_DEV_STORE_PASSWORD").isNullOrBlank() &&
       !System.getenv("ESPECTRAL_DEV_KEY_PASSWORD").isNullOrBlank()
 
+  val releaseKeystorePath = System.getenv("KEYSTORE_PATH") ?: "\${rootDir}/my-upload-key.jks"
+  val releaseSigningAvailable =
+    file(releaseKeystorePath).isFile &&
+      !System.getenv("STORE_PASSWORD").isNullOrBlank() &&
+      !System.getenv("KEY_PASSWORD").isNullOrBlank()
+
   signingConfigs {
-    create("developer") {
-      storeFile = file(developerKeystorePath)
-      storePassword = System.getenv("ESPECTRAL_DEV_STORE_PASSWORD")
-      keyAlias = System.getenv("ESPECTRAL_DEV_KEY_ALIAS") ?: "espectral-dev"
-      keyPassword = System.getenv("ESPECTRAL_DEV_KEY_PASSWORD")
+    if (developerSigningAvailable) {
+      create("developer") {
+        storeFile = file(developerKeystorePath)
+        storePassword = System.getenv("ESPECTRAL_DEV_STORE_PASSWORD")
+        keyAlias = System.getenv("ESPECTRAL_DEV_KEY_ALIAS") ?: "espectral-dev"
+        keyPassword = System.getenv("ESPECTRAL_DEV_KEY_PASSWORD")
+      }
     }
-    create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "\${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+    if (releaseSigningAvailable) {
+      create("release") {
+        storeFile = file(releaseKeystorePath)
+        storePassword = System.getenv("STORE_PASSWORD")
+        keyAlias = System.getenv("KEY_ALIAS") ?: "upload"
+        keyPassword = System.getenv("KEY_PASSWORD")
+      }
     }
   }
 
   buildTypes {
     debug {
-      if (developerSigningAvailable) signingConfig = signingConfigs.getByName("developer")
+      if (developerSigningAvailable) {
+        signingConfig = signingConfigs.getByName("developer")
+      }
     }
     release {
       isCrunchPngs = false
       isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      signingConfig = signingConfigs.getByName("release")
+      if (releaseSigningAvailable) {
+        signingConfig = signingConfigs.getByName("release")
+      }
     }
   }
   compileOptions {
